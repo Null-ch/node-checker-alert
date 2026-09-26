@@ -52,6 +52,7 @@ class TargetKind(str, Enum):
     PANEL = "panel"
     NODE = "node"
     BLOCK = "block"
+    TG_PROXY = "tgproxy"
 
 
 @dataclass(frozen=True)
@@ -65,7 +66,7 @@ class Observation:
 
     @property
     def key(self) -> str:
-        return self.kind.value if self.kind is TargetKind.PANEL else f"{self.kind.value}:{self.object_id}"
+        return f"{self.kind.value}:{self.object_id}" if self.object_id else self.kind.value
 
 
 class EventKind(str, Enum):

@@ -90,6 +90,16 @@ class ProbeSettings:
         return self.mode != "off"
 
 
+@dataclass(frozen=True)
+class TelegramProxySettings:
+    url: str                        # пусто — проверка выключена
+    timeout: int
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.url)
+
+
 PROBE_MODES = ("off", "local", "checkhost")
 REQUIRED = ("PANEL_URL", "PANEL_API_TOKEN", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID")
 
@@ -105,6 +115,7 @@ class Settings:
     telegram: TelegramSettings
     alerts: AlertSettings
     probe: ProbeSettings
+    tg_proxy: TelegramProxySettings
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] = os.environ) -> "Settings":
@@ -120,6 +131,10 @@ class Settings:
         probe_mode = e.str("PROBE_MODE", "off").lower()
         if probe_mode not in PROBE_MODES:
             raise ConfigError(f"PROBE_MODE должен быть одним из: {', '.join(PROBE_MODES)}")
+
+        tg_proxy_url = e.str("TG_PROXY_URL").rstrip("/")
+        if tg_proxy_url and not tg_proxy_url.startswith(("http://", "https://")):
+            raise ConfigError("TG_PROXY_URL должен начинаться с http:// или https://")
 
         timeout = e.int("REQUEST_TIMEOUT", 15, minimum=1)
         return cls(
@@ -155,4 +170,5 @@ class Settings:
                     "ru1.node.check-host.net,ru2.node.check-host.net,ru3.node.check-host.net"),
                 checkhost_control_nodes=e.list("CHECKHOST_CONTROL_NODES", "de1.node.check-host.net"),
             ),
+            tg_proxy=TelegramProxySettings(url=tg_proxy_url, timeout=timeout),
         )

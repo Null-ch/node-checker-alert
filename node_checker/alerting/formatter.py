@@ -25,7 +25,7 @@ class HtmlMessageFormatter:
         (EventKind.REMIND, "🟠 <b>Всё ещё не работает</b>"),
         (EventKind.UP, "🟢 <b>Восстановлено</b>"),
     )
-    TARGET_ORDER = {TargetKind.PANEL: 0, TargetKind.NODE: 1, TargetKind.BLOCK: 2}
+    TARGET_ORDER = {TargetKind.PANEL: 0, TargetKind.TG_PROXY: 1, TargetKind.NODE: 2, TargetKind.BLOCK: 3}
 
     def __init__(self, title: str):
         self._title = escape(title)
@@ -42,6 +42,7 @@ class HtmlMessageFormatter:
 
     def report(self, ctx: "CycleContext", probe_source: Optional[str]) -> str:
         lines = [f"ℹ️ <b>{self._title}</b>: мониторинг запущен", ""]
+        lines += self._tg_proxy_lines(ctx)
         if ctx.panel_error:
             lines.append(f"❌ Панель: {escape(ctx.panel_error)}")
             return "\n".join(lines)
@@ -56,6 +57,14 @@ class HtmlMessageFormatter:
 
     def test(self) -> str:
         return f"✅ <b>{self._title}</b>: тестовое сообщение node-checker"
+
+    @staticmethod
+    def _tg_proxy_lines(ctx: "CycleContext") -> List[str]:
+        if ctx.tg_proxy_error is None:
+            return []
+        if ctx.tg_proxy_error:
+            return [f"❌ Telegram-прокси: {escape(ctx.tg_proxy_error)}"]
+        return ["✅ Telegram-прокси доступен"]
 
     @staticmethod
     def _probe_lines(ctx: "CycleContext", probe_source: Optional[str]) -> List[str]:

@@ -38,9 +38,10 @@ class AlertTracker:
 
     def retain_nodes(self, node_ids: Set[str]) -> None:
         """Забыть ноды, которых больше нет в панели."""
+        node_kinds = (TargetKind.NODE.value, TargetKind.BLOCK.value)
         for key in list(self._states):
             kind, _, object_id = key.partition(":")
-            if kind != TargetKind.PANEL.value and object_id not in node_ids:
+            if kind in node_kinds and object_id not in node_ids:
                 del self._states[key]
 
     def save(self) -> None:

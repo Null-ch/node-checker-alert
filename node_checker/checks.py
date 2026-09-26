@@ -13,6 +13,7 @@ from .config import ProbeSettings
 from .models import Node, Observation, TargetKind
 from .panel import PanelClient, PanelUnavailable
 from .probes import Prober, ProbeResults
+from .tgproxy import TelegramProxyClient
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class CycleContext:
     nodes: Optional[List[Node]] = None          # None — панель недоступна
     panel_error: str = ""
     probe_results: Optional[ProbeResults] = None  # None — в этом цикле не проверялось
+    tg_proxy_error: Optional[str] = None          # None — не проверялось, "" — работает
 
 
 class HealthCheck(Protocol):
@@ -55,6 +57,20 @@ class NodeStatusCheck:
             log.info("Нода %s: %s", o.title, o.problem)
         log.info("Проверено нод: %d, проблемных: %d", len(observations), len(broken))
         return observations
+
+
+class TelegramProxyCheck:
+    """Доступность прокси к Telegram Bot API; от панели не зависит."""
+
+    def __init__(self, client: TelegramProxyClient):
+        self._client = client
+
+    def run(self, ctx: CycleContext) -> Iterable[Observation]:
+        problem = self._client.check()
+        ctx.tg_proxy_error = problem or ""
+        if problem:
+            log.warning("%s: %s", self._client.title, problem)
+        return [Observation(TargetKind.TG_PROXY, "", self._client.title, problem)]
 
 
 class BlockingCheck:

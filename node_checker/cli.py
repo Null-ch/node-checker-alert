@@ -9,12 +9,13 @@ import threading
 
 from .alerting import (AlertTracker, ConsoleNotifier, HtmlMessageFormatter, InMemoryStateRepository,
                        JsonFileStateRepository, TelegramNotifier, fmt_duration)
-from .checks import BlockingCheck, NodeStatusCheck, PanelCheck
+from .checks import BlockingCheck, NodeStatusCheck, PanelCheck, TelegramProxyCheck
 from .config import ConfigError, Settings, load_dotenv
 from .http import JsonHttpClient
 from .panel import RemnawaveClient
 from .probes import create_prober
 from .service import MonitorService
+from .tgproxy import TelegramProxyClient
 
 log = logging.getLogger("node_checker")
 
@@ -27,6 +28,8 @@ def build_service(settings: Settings, dry_run: bool = False) -> MonitorService:
         PanelCheck(RemnawaveClient(settings.panel, http), include_disabled=settings.alerts.alert_on_disabled),
         NodeStatusCheck(),
     ]
+    if settings.tg_proxy.enabled:
+        checks.append(TelegramProxyCheck(TelegramProxyClient(settings.tg_proxy, settings.telegram.bot_token)))
     if prober:
         checks.append(BlockingCheck(prober, settings.probe))
 
@@ -79,11 +82,12 @@ def main(argv=None) -> int:
         signal.signal(sig, lambda *_: stop.set())
 
     p = settings.probe
-    log.info("Старт: %s, интервал %d сек, порог %d/%d, напоминания %s, доступ из РФ: %s",
+    log.info("Старт: %s, интервал %d сек, порог %d/%d, напоминания %s, доступ из РФ: %s, Telegram-прокси: %s",
              settings.panel.api_base, settings.check_interval,
              settings.alerts.fail_threshold, settings.alerts.recover_threshold,
              f"раз в {fmt_duration(settings.alerts.remind_interval)}" if settings.alerts.remind_interval else "выкл",
-             f"{p.mode}, раз в {fmt_duration(p.interval)}" if p.enabled else "выкл")
+             f"{p.mode}, раз в {fmt_duration(p.interval)}" if p.enabled else "выкл",
+             settings.tg_proxy.url or "выкл")
     service.run_forever(settings.check_interval, stop, startup_report=settings.startup_report)
     log.info("Остановлен")
     return 0
