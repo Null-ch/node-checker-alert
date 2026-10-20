@@ -28,7 +28,9 @@ class MonitorService:
         ctx = CycleContext(now=self._clock())
         observations = [obs for check in self._checks for obs in check.run(ctx)]
         if ctx.nodes is not None:
-            self._tracker.retain_nodes({n.id for n in ctx.nodes})
+            # выходные ноды каскадов на доступ из РФ не проверяются — старые алерты по ним забываем
+            self._tracker.retain_nodes({n.id for n in ctx.nodes},
+                                       block_ids={n.id for n in ctx.nodes if not n.is_cascade_exit})
         events = collect(self._tracker.observe(obs, ctx.now) for obs in observations)
 
         if events:

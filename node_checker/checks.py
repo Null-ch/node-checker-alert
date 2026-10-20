@@ -75,7 +75,8 @@ class TelegramProxyCheck:
 
 class BlockingCheck:
     """Доступность нод из РФ. Проверяются только ноды, живые по мнению панели,
-    иначе упавшая нода дала бы ещё и ложный алерт о блокировке."""
+    иначе упавшая нода дала бы ещё и ложный алерт о блокировке.
+    Выходные ноды каскадов не проверяются: клиенты из РФ ходят к ним через входную ноду."""
 
     def __init__(self, prober: Prober, settings: ProbeSettings):
         self._prober = prober
@@ -102,5 +103,5 @@ class BlockingCheck:
 
     def _should_probe(self, node: Node) -> bool:
         excluded = node.name.lower() in self._settings.exclude_nodes or node.address in self._settings.exclude_nodes
-        return (node.is_healthy and bool(node.probe_targets) and not excluded
+        return (node.is_healthy and bool(node.probe_targets) and not excluded and not node.is_cascade_exit
                 and node.country not in self._settings.skip_countries)

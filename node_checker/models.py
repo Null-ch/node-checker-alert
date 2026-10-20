@@ -25,6 +25,7 @@ class Node:
     is_xray_running: Optional[bool] = None
     last_status_message: str = ""
     probe_targets: tuple = field(default_factory=tuple)
+    is_cascade_exit: bool = False               # выходная нода каскада: из РФ к ней ходит входная нода
 
     @property
     def label(self) -> str:
