@@ -70,6 +70,8 @@ class HtmlMessageFormatter:
     def _probe_lines(ctx: "CycleContext", probe_source: Optional[str]) -> List[str]:
         if probe_source is None:
             return ["⚪ Проверка доступа из РФ выключена (PROBE_MODE=off)"]
+        if ctx.probe_no_candidates:
+            return [f"⚪ Доступ из РФ ({probe_source}): нет нод для проверки"]
         if not ctx.probe_results:
             return [f"⚪ Доступ из РФ ({probe_source}): нет данных, см. логи"]
         labels = {n.id: n.label for n in ctx.nodes or []}

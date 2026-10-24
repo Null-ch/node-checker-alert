@@ -25,6 +25,7 @@ class CycleContext:
     panel_error: str = ""
     probe_results: Optional[ProbeResults] = None  # None — в этом цикле не проверялось
     tg_proxy_error: Optional[str] = None          # None — не проверялось, "" — работает
+    probe_no_candidates: bool = False             # все ноды исключены из проверки доступа из РФ
 
 
 class HealthCheck(Protocol):
@@ -88,6 +89,10 @@ class BlockingCheck:
             return []
         self._last_run = ctx.now
         candidates = {n.id: n for n in ctx.nodes if self._should_probe(n)}
+        if not candidates:
+            ctx.probe_no_candidates = True
+            log.info("Доступ из РФ (%s): нет нод для проверки (исключены или нет живых)", self._prober.source)
+            return []
         ctx.probe_results = self._prober.probe(list(candidates.values()))
 
         observations = []
